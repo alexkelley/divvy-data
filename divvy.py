@@ -122,7 +122,6 @@ def describe_dataset(filename):
 ## Set up file and folder names ##
 ##################################
 
-
 main_directory, sub_directory = 'divvy_main', 'divvy_data_'
 output_filename = 'final_divvy_data.csv'
 
