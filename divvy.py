@@ -129,6 +129,6 @@ output_filename = 'final_divvy_data.csv'
 ## Run functions ##
 ###################
 
-download_divvy(main_directory, sub_directory)
+#download_divvy(main_directory, sub_directory)
 
 #build_csv(main_directory, sub_directory, output_filename)
