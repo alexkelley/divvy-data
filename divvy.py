@@ -10,15 +10,17 @@ import numpy as np
 def download_divvy(main_directory, sub_directory):
     start_time = time.time()
 
-    divvy_links = ["https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Stations_Trips_2013.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Stations_Trips_2014_Q1Q2.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Stations_Trips_2014_Q3Q4.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2015-Q1Q2.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2015_Q3Q4.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2016_Q1Q2.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2016_Q3Q4.zip",
-                   "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2017_Q1Q2.zip"
-                   ]
+    divvy_links = [
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Stations_Trips_2013.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Stations_Trips_2014_Q1Q2.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Stations_Trips_2014_Q3Q4.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2015-Q1Q2.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2015_Q3Q4.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2016_Q1Q2.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2016_Q3Q4.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2017_Q1Q2.zip",
+        "https://s3.amazonaws.com/divvy-data/tripdata/Divvy_Trips_2017_Q3Q4.zip"
+    ]
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     os.mkdir(main_directory)
@@ -45,9 +47,13 @@ def download_divvy(main_directory, sub_directory):
         end_time - start_time))
 
 
+def load_data_to_sql():
+    pass
+
+
 def build_csv(main_directory, sub_directory, output_filename):
     '''
-    Using the Pandas package, join station details to trip data for 
+    Using the Pandas package, join station details to trip data for
     selected stations
     '''
     station_ids = {35: 'NavyPier',
@@ -124,6 +130,6 @@ output_filename = 'final_divvy_data.csv'
 ## Run functions ##
 ###################
 
-#download_divvy(main_directory, sub_directory)
+download_divvy(main_directory, sub_directory)
 
-build_csv(main_directory, sub_directory, output_filename)
+#build_csv(main_directory, sub_directory, output_filename)
