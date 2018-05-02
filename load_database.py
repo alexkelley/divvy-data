@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, date
 import sys
 import pprint
 import sqlite3
-
+from dateutil.parser import parse
 
 def run_query(db_name, query):
     '''
@@ -43,7 +43,7 @@ def generate_insert(table_name, value_dict):
 
         column_string += "{}, ".format(label.replace("'", ""))
 
-        sql_string = "INSERT INTO {0} ({1}) VALUES ({2});".format(
+        sql_string = "INSERT OR REPLACE INTO {0} ({1}) VALUES ({2});".format(
             table_name, column_string[:-2], value_string[:-2])
 
     return sql_string
@@ -69,6 +69,7 @@ def load_data_into_table(db_name, table_name, sb_list):
     return True
 
 
+
 def parse_csv(filename):
     data_list = []
 
@@ -77,7 +78,7 @@ def parse_csv(filename):
 
         data = [r for r in reader if r != '']
 
-        headers = data.pop(0)
+        headers = list(filter(None, data.pop(0)))
 
         replacements = {
             'birthday': 'birthyear',
@@ -86,12 +87,23 @@ def parse_csv(filename):
         }
         headers = [replacements.get(n, n) for n in headers if n in headers]
 
-        headers = list(filter(None, headers))
+        # for testing
+        #print(headers)
+        #data = list(filter(None, data[:50]))
+        #print(data)
 
         for row in data:
             d = {}
             for i in range(len(headers)):
-                d[headers[i]] = row[i]
+                header = headers[i]
+                field_value = row[i]
+
+                # fix inconsistent date formats
+                if header in ('start_time', 'end_time', 'online_date'):
+                    field_value = parse(field_value)
+                    field_value = datetime.strftime(field_value, '%Y-%m-%d %H:%M')
+
+                d[header] = field_value
 
             data_list.append(d)
 
@@ -121,9 +133,23 @@ def set_up_stations(db_name):
     with open('stations_table.sql', 'r') as f:
         stations = f.read()
 
+    run_query(db_name, stations)
+
+    # most recent stations detail file from Divvy Data
     stations = parse_csv('/home/alex/divvy-data/divvy_main/divvy_data_8/divvy_file_0.csv')
 
     print(load_data_into_table(db_name, 'stations', stations))
+
+
+def set_up_trips(db_name):
+    run_query(db_name, 'DROP TABLE IF EXISTS trips;')
+    with open('trips_table.sql', 'r') as f:
+        trips = f.read()
+
+    run_query(db_name, trips)
+    print('trips table built.')
+
+    walk_csv_files(main_directory, sub_directory, db_name)
 
 
 ##################################
@@ -140,11 +166,10 @@ main_directory, sub_directory = 'divvy_main', 'divvy_data_'
 
 # set_up_stations(db_name)
 
+set_up_trips(db_name)
 
-# run_query(db_name, 'DROP TABLE IF EXISTS trips;')
-# with open('trips_table.sql', 'r') as f:
-#     trips = f.read()
-
-# run_query(db_name, trips)
-
-#walk_csv_files(db_name, main_directory, sub_directory)
+failed = [
+    'divvy_main/divvy_data_5/divvy_file_4.csv',
+    'divvy_main/divvy_data_6/divvy_file_1.csv',
+    'divvy_main/divvy_data_7/divvy_file_3.csv',
+]
