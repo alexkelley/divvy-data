@@ -3,7 +3,7 @@ id INTEGER,
 name TEXT,
 city TEXT,
 latitude NUMERIC,
-longitudee NUMERIC,
+longitude NUMERIC,
 dpcapacity INTEGER,
 online_date TEXT,
 

@@ -3,52 +3,25 @@
 
 import os
 import time
-import pandas as pd
-import numpy as np
+import csv
 from datetime import datetime, timedelta, date
 import sys
 import pprint
 import sqlite3
 
 
-def create_tables(db_name):
-
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-
-    with open('stations_table.sql', 'r') as f:
-        stations = f.read()
-
-    cursor.execute(stations)
-
-    with open('trips_table.sql', 'r') as f:
-        trips = f.read()
-
-    cursor.execute(trips)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def execute_query(db_name, query):
+def run_query(db_name, query):
     '''
-    Takes a query string
-
-    Returns a list of tuples
+    Runs a query on the designated database
     '''
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
     cursor.execute(query)
 
-    results = cursor.fetchall()
-
     conn.commit()
     cursor.close()
     conn.close()
-
-    return results
 
 
 def generate_insert(table_name, value_dict):
@@ -76,7 +49,6 @@ def generate_insert(table_name, value_dict):
     return sql_string
 
 
-
 def load_data_into_table(db_name, table_name, sb_list):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
@@ -97,61 +69,62 @@ def load_data_into_table(db_name, table_name, sb_list):
     return True
 
 
-def parse_csv_files(main_directory, sub_directory):
-    '''
-    '''
-    count = 1
+def parse_csv(filename):
+    data_list = []
 
+    with open(filename, 'r') as f:
+        reader = csv.reader(f)
+
+        data = [r for r in reader if r != '']
+
+        headers = data.pop(0)
+
+        replacements = {
+            'birthday': 'birthyear',
+            'starttime': 'start_time',
+            'stoptime': 'end_time'
+        }
+        headers = [replacements.get(n, n) for n in headers if n in headers]
+
+        headers = list(filter(None, headers))
+
+        for row in data:
+            d = {}
+            for i in range(len(headers)):
+                d[headers[i]] = row[i]
+
+            data_list.append(d)
+
+    return data_list
+
+
+def walk_csv_files(main_directory, sub_directory, db_name):
+    '''
+    Traverse a directory of csv files and upload to database
+    '''
     for i in range(9):
         directory = os.path.join(main_directory, sub_directory + str(i))
         for subdir, dirs, files in os.walk(directory):
 
-            # build a DataFrame for station location details based on smallest file
-            for file in files:
-                filename = os.path.join(subdir, file)
-                filesize = os.stat(filename).st_size
-                if filesize < 100000:
-                    station_details = pd.read_csv(filename, index_col=0)
-                    # print(list(station_details))
-
-            # build a trip DF for each file and subset on desired stations
             for file in files:
                 filename = os.path.join(subdir, file)
                 filesize = os.stat(filename).st_size
                 if filesize > 100000:
-                    df = pd.read_csv(filename)
-                    # print(len(list(df)))
-                    # print(list(df))
+                    print('Loading: {}'.format(filename))
+                    data = parse_csv(filename)
+                    print(load_data_into_table(db_name, 'trips', data))
 
-                    # landmark column did not appear until July 2014
-                    # if len(list(df)) < 19:
-                    #    df['landmark'] = np.zeros(len(df))
 
-                    # subset temp df on desired station_ids
-                    x = df[df['from_station_id'].isin(station_ids.keys())]
+def set_up_stations(db_name):
+    run_query(db_name, 'DROP TABLE IF EXISTS stations;')
 
-                    # choose to reduce the observations by
-                    # total number (n) or % (frac)
-                    x = df.sample(
-                        n=1000
-                        # frac=0.1
-                    )
-                    # join station_id data on temp df (x)
-                    y = x.join(station_details[['name', 'latitude', 'longitude', 'dpcapacity']],
-                               on='from_station_id', how='inner')
+    with open('stations_table.sql', 'r') as f:
+        stations = f.read()
 
-                    # create file if first file, append data if not
-                    if count == 1:
-                        print(y.dtypes)
-                        with open(output_filename, 'w') as f:
-                            y.to_csv(f, header=True)
-                        print("\nRaw files processed: {}".format(count))
-                    else:
-                        print("Raw files processed: {}".format(count))
-                        with open(output_filename, 'a') as f:
-                            y.to_csv(f, header=False)
+    stations = parse_csv('/home/alex/divvy-data/divvy_main/divvy_data_8/divvy_file_0.csv')
 
-                    count += 1
+    print(load_data_into_table(db_name, 'stations', stations))
+
 
 ##################################
 ## Set up file and folder names ##
@@ -165,4 +138,13 @@ main_directory, sub_directory = 'divvy_main', 'divvy_data_'
 ## Run functions ##
 ###################
 
-create_tables(db_name)
+# set_up_stations(db_name)
+
+
+# run_query(db_name, 'DROP TABLE IF EXISTS trips;')
+# with open('trips_table.sql', 'r') as f:
+#     trips = f.read()
+
+# run_query(db_name, trips)
+
+#walk_csv_files(db_name, main_directory, sub_directory)
