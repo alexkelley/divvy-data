@@ -11,6 +11,26 @@ import pprint
 import sqlite3
 
 
+def create_tables(db_name):
+
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+
+    with open('stations_table.sql', 'r') as f:
+        stations = f.read()
+
+    cursor.execute(stations)
+
+    with open('trips_table.sql', 'r') as f:
+        trips = f.read()
+
+    cursor.execute(trips)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
 def execute_query(db_name, query):
     '''
     Takes a query string
@@ -29,31 +49,6 @@ def execute_query(db_name, query):
     conn.close()
 
     return results
-
-
-def create_table(db_name, table_name, attribute_dict):
-    '''
-    Define structure of attribute_dict
-    {}
-    '''
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-
-    cursor.execute('DROP TABLE IF EXISTS {}'.format(table_name))
-
-    build_table_sql = 'CREATE TABLE {} (\n'.format(table_name)
-
-    for key, value in attribute_dict.items():
-        build_table_sql += "   {} {},\n".format(
-            value['name'], value['data_type'])
-
-    build_table_sql = build_table_sql[:-2] + '\n);'
-
-    cursor.execute(build_table_sql)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
 
 
 def generate_insert(table_name, value_dict):
@@ -102,7 +97,7 @@ def load_data_into_table(db_name, table_name, sb_list):
     return True
 
 
-def parse_csv(main_directory, sub_directory):
+def parse_csv_files(main_directory, sub_directory):
     '''
     '''
     count = 1
@@ -169,3 +164,5 @@ main_directory, sub_directory = 'divvy_main', 'divvy_data_'
 ###################
 ## Run functions ##
 ###################
+
+create_tables(db_name)
